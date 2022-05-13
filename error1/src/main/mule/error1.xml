@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="578ec937-57d1-46fa-b3b7-23efbe30e70e" >
+		<http:listener-connection host="localhost" port="8081" />
+	</http:listener-config>
+	<flow name="error1Flow" doc:id="c768dcb7-ba6a-4399-a0ce-34997300a5f1" >
+		<http:listener doc:name="Listener" doc:id="731cfda6-c617-43fa-9383-3dd6d8c91c42" config-ref="HTTP_Listener_config" path="error1">
+			<http:error-response >
+				<http:body ><![CDATA[#[payload]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<logger level="INFO" doc:name="Logger" doc:id="5099a662-2865-4b6c-9314-b9f65a35451e" message="#[payload]"/>
+		<ee:transform doc:name="Transform Message" doc:id="a37b8ecb-b1c7-487e-9f50-ef94e7f43bf1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+import isAlpha from dw::core::Strings
+---
+
+{
+	
+	"number": payload.number as Number,
+	"name": if(isAlpha(payload.name))payload.name else "" as Number
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<error-handler >
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="e4832c9f-370b-4fde-a40a-78b786ba897f" >
+				<ee:transform doc:name="Transform Message" doc:id="6a64b97c-030b-4c57-af9d-56fcd1980e47" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+import * from dw::core::Strings
+---
+
+if(isAlpha(payload.number))"please enter only number"
+
+else if(isEmpty(payload.number))"please enter only number"
+
+else ""
+
+
+]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>
